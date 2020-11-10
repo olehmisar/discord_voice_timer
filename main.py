@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 import tempfile
-from typing import Dict, Optional
+from typing import Optional
 from dataclasses import dataclass, field
 from uuid import uuid4
 import os
@@ -15,7 +15,7 @@ import pyttsx3
 import dotenv
 dotenv.load_dotenv()
 
-from utils import calculate_notifications_interval, parse_time_str, round_to_nearest_5
+from utils import calculate_notifications_interval, connect_to_voice_channel, get_user_voice_channel, parse_time_str, round_to_nearest_5
 import texts
 
 
@@ -30,7 +30,7 @@ class TimerData:
 class state:
     """Just a namespace for the global state"""
 
-    timers: Dict[int, TimerData] = {}
+    timer: Optional[TimerData] = None
     tts_engine = pyttsx3.init()
 
 
@@ -53,7 +53,9 @@ if __name__ == '__main__':
 
     @bot.command()
     async def start(ctx: commands.Context, duration_str=''):
-        if not ctx.author.voice or not ctx.author.voice.channel:
+        # Check if user is connected to a voice channel
+        voice_channel = get_user_voice_channel(ctx)
+        if not voice_channel:
             await ctx.send(f'{ctx.author.mention} {texts.en.requires_to_be_connected_to_a_voice_channel}')
             return
 
@@ -63,18 +65,14 @@ if __name__ == '__main__':
             await ctx.send(f'{ctx.author.mention} {texts.en.invalid_duration_str}: {duration_str}')
             return
 
-        # Connect to this user's voice channel
-        voice_channel: discord.VoiceChannel = ctx.author.voice.channel
-        if not ctx.voice_client or ctx.voice_client.channel != voice_channel:
-            await voice_channel.connect()
-
         # Set a timer
         def start_timer():
-            state.timers[voice_channel.id] = TimerData(
+            state.timer = TimerData(
                 duration=duration,
                 voice_client=ctx.voice_client,
             )
 
+        await connect_to_voice_channel(ctx, voice_channel)
         ctx.voice_client.stop()
         ctx.voice_client.play(generate_voice(texts.en.start_timer(duration)),
                               after=lambda _: start_timer())
@@ -82,35 +80,35 @@ if __name__ == '__main__':
     async def update_timers():
         await bot.wait_until_ready()
         while not bot.is_closed():
-            # cache keys because the dictionary will be modified during iteration
-            for id in list(state.timers.keys()):
-                timer = state.timers[id]
-                now = datetime.now()
-
-                time_left = timer.duration - (now - timer.start)
-
-                # Stop timer
-                if time_left.seconds <= 0:
-                    del state.timers[id]
-
-                    timer.voice_client.stop()
-                    timer.voice_client.play(
-                        generate_voice(texts.en.time_is_over))
-
-                # Notify if needed
-                elif now - timer.last_notified > calculate_notifications_interval(time_left):
-                    timer.last_notified = now
-
-                    # Round to the nearest 5 seconds when the time is not that important yet
-                    if time_left.seconds > 30:
-                        time_left = timedelta(
-                            seconds=round_to_nearest_5(time_left.seconds))
-
-                    timer.voice_client.stop()
-                    timer.voice_client.play(generate_voice(
-                        texts.en.timer_notification(time_left)))
-
             await asyncio.sleep(1)
+
+            timer = state.timer
+            if not timer:
+                continue
+
+            now = datetime.now()
+            time_left = timer.duration - (now - timer.start)
+
+            # Stop timer
+            if time_left.seconds <= 0:
+                state.timer = None
+
+                timer.voice_client.stop()
+                timer.voice_client.play(
+                    generate_voice(texts.en.time_is_over))
+
+            # Notify if needed
+            elif now - timer.last_notified > calculate_notifications_interval(time_left):
+                timer.last_notified = now
+
+                # Round to the nearest 5 seconds when the time is not that important yet
+                if time_left.seconds > 30:
+                    time_left = timedelta(
+                        seconds=round_to_nearest_5(time_left.seconds))
+
+                timer.voice_client.stop()
+                timer.voice_client.play(generate_voice(
+                    texts.en.timer_notification(time_left)))
 
     bot.loop.create_task(update_timers())
 

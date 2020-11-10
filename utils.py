@@ -1,6 +1,20 @@
 from datetime import timedelta
 from typing import Optional, Tuple
 
+import discord
+from discord.ext.commands import Context
+
+
+def get_user_voice_channel(ctx: Context) -> discord.VoiceChannel:
+    return ctx.author.voice and ctx.author.voice.channel
+
+
+async def connect_to_voice_channel(ctx: Context, voice_channel: discord.VoiceChannel):
+    if not ctx.voice_client:
+        await voice_channel.connect()
+    elif ctx.voice_client.channel != voice_channel:
+        await ctx.voice_client.move_to(voice_channel)
+
 
 def parse_time_str(time_str: str) -> Optional[timedelta]:
     try:
