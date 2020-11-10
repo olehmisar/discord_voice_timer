@@ -77,6 +77,14 @@ if __name__ == '__main__':
         ctx.voice_client.play(generate_voice(texts.en.start_timer(duration)),
                               after=lambda _: start_timer())
 
+    @bot.command()
+    async def stop(ctx: commands.Context):
+        def stop_timer():
+            state.timer = None
+        ctx.voice_client.stop()
+        ctx.voice_client.play(generate_voice(texts.en.timer_is_stopped),
+                              after=lambda _: stop_timer())
+
     async def update_timers():
         await bot.wait_until_ready()
         while not bot.is_closed():

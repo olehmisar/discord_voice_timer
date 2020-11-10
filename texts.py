@@ -7,6 +7,7 @@ class en:
     invalid_duration_str = 'invalid duration'
 
     time_is_over = 'time is over'
+    timer_is_stopped = 'timer is stopped'
 
     @staticmethod
     def start_timer(duration: timedelta):
