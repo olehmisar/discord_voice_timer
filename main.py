@@ -73,17 +73,20 @@ if __name__ == '__main__':
             )
 
         await connect_to_voice_channel(ctx, voice_channel)
+        await ctx.message.add_reaction(texts.reactions.ok_hand)
         ctx.voice_client.stop()
         ctx.voice_client.play(generate_voice(texts.en.start_timer(duration)),
                               after=lambda _: start_timer())
 
     @bot.command()
     async def stop(ctx: commands.Context):
-        def stop_timer():
-            state.timer = None
-        ctx.voice_client.stop()
-        ctx.voice_client.play(generate_voice(texts.en.timer_is_stopped),
-                              after=lambda _: stop_timer())
+        await ctx.message.add_reaction(texts.reactions.ok_hand)
+        if ctx.voice_client:
+            def stop_timer():
+                state.timer = None
+            ctx.voice_client.stop()
+            ctx.voice_client.play(generate_voice(texts.en.timer_is_stopped),
+                                  after=lambda _: stop_timer())
 
     async def update_timers():
         await bot.wait_until_ready()

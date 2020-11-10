@@ -30,3 +30,7 @@ def _to_time_str(time: timedelta, include_flat=False) -> str:
         ret += 'flat'
 
     return ret
+
+
+class reactions:
+    ok_hand = '👌'
