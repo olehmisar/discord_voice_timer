@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime, timedelta
 import tempfile
-from typing import Dict
-from dataclasses import dataclass
+from typing import Dict, Optional
+from dataclasses import dataclass, field
 from uuid import uuid4
 import os
 
@@ -21,11 +21,10 @@ import texts
 
 @dataclass
 class TimerData:
-    start: datetime
-    notifications_interval: timedelta
     duration: timedelta
     voice_client: discord.VoiceClient
-    last_notified: datetime
+    start: datetime = field(default_factory=datetime.now)
+    last_notified: datetime = field(default_factory=datetime.now)
 
 
 class state:
@@ -72,10 +71,7 @@ if __name__ == '__main__':
         # Set a timer
         def start_timer():
             state.timers[voice_channel.id] = TimerData(
-                start=datetime.now(),
                 duration=duration,
-                notifications_interval=timedelta(seconds=5),
-                last_notified=datetime.now(),
                 voice_client=ctx.voice_client,
             )
 
