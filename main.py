@@ -84,7 +84,7 @@ states: Dict[discord.Guild, State] = defaultdict(State)
 
 
 if __name__ == '__main__':
-    bot = commands.Bot(command_prefix='!')
+    bot = commands.Bot(command_prefix='t!')
 
     @bot.event
     async def on_ready(): print("Bot is ready!")
