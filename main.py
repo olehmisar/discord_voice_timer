@@ -54,7 +54,7 @@ class State:
 
         now = datetime.now()
         time_left = timer.duration - (now - timer.start)
-        # ceil to make beautiful numbers. E.g., 4.8 -> 5 instead of 4.8 -> 5
+        # ceil to make beautiful numbers. E.g., 4.8 -> 5 instead of 4.8 -> 4
         time_left = timedelta(seconds=math.ceil(time_left.total_seconds()))
 
         # Stop timer
